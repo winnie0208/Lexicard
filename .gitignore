@@ -1,0 +1,7 @@
+# Local editor / vault state (not project deliverables)
+.obsidian/
+.agents/
+
+# OS files
+.DS_Store
+Thumbs.db
