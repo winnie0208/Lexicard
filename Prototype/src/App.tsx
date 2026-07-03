@@ -3,10 +3,12 @@ import NavBar from './components/NavBar'
 import CardLibraryPage from './pages/CardLibraryPage'
 import AddWordPage from './pages/AddWordPage'
 import QuickStudyPage from './pages/QuickStudyPage'
+import DevSeedPanel from './components/DevSeedPanel'
 
 function App() {
   return (
     <div className="flex min-h-svh flex-col">
+      {import.meta.env.DEV && <DevSeedPanel />}
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<CardLibraryPage />} />

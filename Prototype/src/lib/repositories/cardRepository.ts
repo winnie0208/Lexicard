@@ -1,5 +1,6 @@
 import { db } from '../db'
 import { normalizeWord } from '../normalizeWord'
+import { generateId } from '../generateId'
 import { FAMILIARITY_INITIAL_SCORE } from '../familiarity'
 import type { Card } from '../../types/card'
 
@@ -14,7 +15,7 @@ export type UpdateCardInput = Partial<Omit<Card, 'id' | 'createdAt' | 'updatedAt
 export async function createCard(input: CreateCardInput): Promise<Card> {
   const now = Date.now()
   const card: Card = {
-    id: crypto.randomUUID(),
+    id: generateId(),
     word: input.word,
     normalizedWord: normalizeWord(input.word),
     phonetic: input.phonetic ?? '',

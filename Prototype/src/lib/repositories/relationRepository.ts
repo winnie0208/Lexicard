@@ -1,4 +1,5 @@
 import { db } from '../db'
+import { generateId } from '../generateId'
 import type { Relation, RelationSource, RelationType } from '../../types/relation'
 
 export interface CreateRelationInput {
@@ -11,7 +12,7 @@ export interface CreateRelationInput {
 
 export async function createRelation(input: CreateRelationInput): Promise<Relation> {
   const relation: Relation = {
-    id: crypto.randomUUID(),
+    id: generateId(),
     sourceCardId: input.sourceCardId,
     targetCardId: input.targetCardId,
     relationType: input.relationType,

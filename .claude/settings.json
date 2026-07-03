@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prettier *)",
+      "Bash(npx vite-node *)",
+      "Bash(rm -f smoke-test.mjs)",
+      "Bash(npm uninstall *)",
+      "Bash(npm run *)",
+      "Bash(netstat -ano)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
+      "Bash(ipconfig)",
+      "Bash(tasklist //FI \"PID eq 28120\")",
+      "Bash(tasklist //FI \"PID eq 25312\")",
+      "Bash(taskkill //F //PID 28120)",
+      "Bash(taskkill //F //PID 25312)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/)"
+    ]
+  }
+}

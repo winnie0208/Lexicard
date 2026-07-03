@@ -1,4 +1,5 @@
 import { db } from '../db'
+import { generateId } from '../generateId'
 import type { Sense } from '../../types/sense'
 
 export interface CreateSenseInput {
@@ -16,7 +17,7 @@ export type UpdateSenseInput = Partial<Omit<Sense, 'id' | 'cardId' | 'createdAt'
 export async function createSense(input: CreateSenseInput): Promise<Sense> {
   const now = Date.now()
   const sense: Sense = {
-    id: crypto.randomUUID(),
+    id: generateId(),
     cardId: input.cardId,
     partOfSpeech: input.partOfSpeech,
     chineseMeaning: input.chineseMeaning,

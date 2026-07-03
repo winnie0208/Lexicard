@@ -182,3 +182,25 @@
 - 驗證：`npm run build`（`tsc -b` 型別檢查通過）、`npm run lint`、`prettier --check .` 皆通過。另以暫時安裝的 `fake-indexeddb` + `vite-node` 撰寫一次性 smoke test（16 項斷言：normalizeWord、預設熟悉度 50、依 normalizedWord 查詢、sense 新增與 setPrimarySense 互斥、relation 雙向查詢、clamp 上下界、三段熟悉度分級邊界 39/40/69/70、刪除字卡的 sense/relation 級聯刪除）全數通過後，已移除該 smoke test 檔案與暫裝套件，不留在正式相依套件中。
 - 目前進度：Phase 1 全部完成，等待使用者確認後進入 Phase 2（單字卡庫，不含 AI、不含匯出）。
 - 下一步：Phase 2 — 列表頁（總數／列表／熟悉度圖示／星號）、搜尋（word/normalizedWord/sense 中文意思）、篩選＋排序、三種空狀態、更多選單殼子（CSV 匯出項目先放）。
+
+### Phase 2　單字卡庫（不含 AI、不含匯出）
+
+- 修改摘要：完成 Phase 2 全部 5 項任務，`CardLibraryPage` 從骨架頁面實作為可搜尋／篩選／排序的字卡列表，資料來源改為 Dexie 即時查詢。
+- 影響範圍：新增 `Prototype/src/hooks/useCardLibrary.ts`（`dexie-react-hooks` 的 `useLiveQuery` 包裝，回傳 cards 與依 cardId 分組的 senses）、`Prototype/src/lib/cardLibraryQuery.ts`（純函式 `filterAndSortCards`，處理搜尋／篩選／排序邏輯）、`Prototype/src/components/FamiliarityIcon.tsx`、`Prototype/src/components/EmptyState.tsx`、`Prototype/src/components/LibraryMoreMenu.tsx`（⋯ 選單殼子，CSV 項目 disabled）；改寫 `Prototype/src/pages/CardLibraryPage.tsx`。新增相依套件 `dexie-react-hooks`。
+- 技術決策：
+  - 搜尋比對：`word`/`normalizedWord` 走 `normalizeWord`（trim+lowercase）子字串比對；sense 中文意思走 `trim` 後子字串比對（不做大小寫轉換，中文無此需求）。
+  - 空狀態優先順序：先看整體字卡數是否為 0（無字卡）→ 再看有搜尋字串且結果為空（搜尋無結果）→ 再看星號篩選中且結果為空（星號篩選無結果），三者互斥判斷，避免搜尋+星號同時為空時訊息衝突。
+  - 列表項目（單字／熟悉度圖示／星號）在 Phase 2 為純顯示，不可點擊、星號不可從列表切換 —— 對應 PRD 3.3 節「星號（可編輯）」是單字詳情頁（Phase 3）的能力，Phase 2 只負責列表呈現，避免提前跨 Phase 邊界。單字列也尚未串連到詳情頁導覽，因為 Phase 3 的詳情頁還不存在。
+  - 總單字數（header 顯示）固定顯示 `cards.length`（不受目前搜尋／篩選影響），符合 PRD「總單字數」為字卡庫整體指標的定義。
+- 驗證：`npm run build`（`tsc -b` 型別檢查）、`npm run lint`、`prettier --check .` 皆通過。另以暫裝 `vite-node` 對 `filterAndSortCards` 撰寫 8 項一次性 smoke test（依單字子字串搜尋、依 sense 中文意思搜尋、無結果、星號篩選、四種排序）全數通過後移除暫裝套件。因目前環境無瀏覽器自動化工具，UI 實際渲染與互動（灌測試資料、搜尋/篩選/排序切換、三種空狀態畫面）已請使用者於瀏覽器手動確認，尚待使用者回報結果。
+- 目前進度：Phase 2 程式碼與建置驗證完成，等待使用者瀏覽器手動測試回饋與確認後進入 Phase 3（單字詳情，純手動 CRUD）。
+- 下一步：Phase 3 — 基本資訊顯示與編輯（單字、音標、熟悉度圖示、星號、備註）、發音播放（Web Speech API）、Sense 列表與手動 CRUD、Sense 中文意思重複提醒（文字相同版本）、Relation 顯示與手動建立/刪除。
+
+### Bug fix：iPad 實機測試（非 HTTPS 區網）下灌測試資料無反應
+
+- 修改摘要：使用者以 iPad Safari 透過區網 IP（非 HTTPS、非 localhost）測試時，點擊「灌入測試資料」沒有任何反應。根因為 `crypto.randomUUID()` 是僅限安全情境（HTTPS 或 localhost）才可用的 API，在區網 HTTP 情境下呼叫會拋出例外；而 `DevSeedPanel` 原本的錯誤處理只有 `try/finally`、沒有 `catch`，例外被吞掉、UI 沒有任何提示，看起來像「沒有反應」。
+- 影響範圍：新增 `Prototype/src/lib/generateId.ts`（以 `crypto.getRandomValues()` 手刻 UUID v4，此 API 不受安全情境限制），取代 `cardRepository.ts`／`senseRepository.ts`／`relationRepository.ts` 三處的 `crypto.randomUUID()`。另外強化 `DevSeedPanel.tsx`：改為 `try/catch/finally` 並將錯誤訊息顯示在畫面上（不只是 console），且從 `fixed` 浮動定位改為一般文件流（page 頂部橫幅），避免未來與底部導覽列的定位／疊層問題。
+- 技術決策：由於 PRD 明確要求 iPad 為主要建立/整理情境、且 iPad 手寫測試（Phase 5 任務 7）之後也會在區網 HTTP 環境下進行，`generateId()` 取代 `crypto.randomUUID()` 是必要的相容性修正，非單純測試工具修補；未來所有需要產生 id 的地方應統一使用 `generateId()`。
+- 驗證：`npm run build`／`lint`／`prettier --check` 皆通過；另以暫裝 `vite-node` 驗證 `generateId()` 產生合法 UUID v4 格式且 1000 次呼叫無碰撞，驗證後移除暫裝套件。
+- 目前進度：修正已套用，等待使用者於 iPad 重新測試「灌入測試資料」按鈕確認可正常運作。
+- 下一步：使用者確認 iPad 測試通過、Phase 2 沒有其他問題後進入 Phase 3。
