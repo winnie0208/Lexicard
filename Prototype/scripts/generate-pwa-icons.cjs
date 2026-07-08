@@ -4,8 +4,8 @@ const fs = require('node:fs')
 const path = require('node:path')
 const zlib = require('node:zlib')
 
-const BG = [170, 59, 255] // #aa3bff, matches manifest theme_color
-const FG = [255, 255, 255]
+const BG = [179, 67, 31] // #b3431f, matches manifest theme_color
+const FG = [245, 240, 227] // #f5f0e3, matches manifest background_color
 
 function crc32(buf) {
   let c

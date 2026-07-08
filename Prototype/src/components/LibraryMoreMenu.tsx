@@ -1,45 +1,34 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { ExportIcon } from './icons'
 
-// Shell only for Phase 2 — CSV export wiring lands in Phase 8.
+// CSV export logic itself lands in Phase 8 — for now the button surfaces a
+// short "coming soon" note instead of hiding behind a placeholder menu item.
 function LibraryMoreMenu() {
-  const [isOpen, setIsOpen] = useState(false)
+  const [showNotice, setShowNotice] = useState(false)
+
+  useEffect(() => {
+    if (!showNotice) return
+    const timer = setTimeout(() => setShowNotice(false), 2200)
+    return () => clearTimeout(timer)
+  }, [showNotice])
 
   return (
     <div className="relative">
       <button
         type="button"
-        onClick={() => setIsOpen((open) => !open)}
-        aria-haspopup="menu"
-        aria-expanded={isOpen}
-        aria-label="更多選單"
-        className="rounded-full px-2 py-1 text-xl leading-none text-gray-500 hover:bg-gray-100"
+        onClick={() => setShowNotice(true)}
+        aria-label="匯出 CSV"
+        className="flex h-11 w-11 items-center justify-center rounded-full bg-paper-deep text-ink-soft transition-colors hover:bg-accent-soft hover:text-accent"
       >
-        ⋯
+        <ExportIcon className="h-5 w-5" />
       </button>
-      {isOpen && (
-        <>
-          <button
-            type="button"
-            aria-hidden="true"
-            tabIndex={-1}
-            className="fixed inset-0 z-10 cursor-default"
-            onClick={() => setIsOpen(false)}
-          />
-          <div
-            role="menu"
-            className="absolute right-0 z-20 mt-2 w-40 rounded-md border border-gray-200 bg-white py-1 shadow-lg"
-          >
-            <button
-              type="button"
-              role="menuitem"
-              disabled
-              title="CSV 匯出功能將於後續版本提供"
-              className="w-full cursor-not-allowed px-4 py-2 text-left text-sm text-gray-400"
-            >
-              匯出 CSV
-            </button>
-          </div>
-        </>
+      {showNotice && (
+        <div
+          role="status"
+          className="absolute top-12 right-0 z-20 w-44 rounded-2xl bg-ink px-3 py-2 text-xs text-paper shadow-lg"
+        >
+          CSV 匯出功能將於後續版本提供
+        </div>
       )}
     </div>
   )

@@ -1,9 +1,8 @@
-export type RelationType = 'extension' | 'confusable' | 'similarMeaning' | 'partOfSpeechVariant'
+export type RelationType = 'confusable' | 'similarMeaning' | 'partOfSpeechVariant'
 
 export type RelationSource = 'manual' | 'ai'
 
 export const RELATION_TYPE_LABEL: Record<RelationType, string> = {
-  extension: '延伸單字',
   confusable: '易混淆單字',
   similarMeaning: '相似意思',
   partOfSpeechVariant: '詞性變化',
@@ -15,6 +14,10 @@ export interface Relation {
   id: string
   sourceCardId: string
   targetCardId: string
+  // The relation links one specific sense of each card (a card can have
+  // multiple senses; the relation is only meaningful for a particular pair).
+  sourceSenseId: string
+  targetSenseId: string
   relationType: RelationType
   relationSource: RelationSource
   description: string

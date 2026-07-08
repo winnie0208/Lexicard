@@ -5,6 +5,9 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    allowedHosts: ['.trycloudflare.com'],
+  },
   plugins: [
     react(),
     tailwindcss(),
@@ -16,8 +19,8 @@ export default defineConfig({
         description: 'AI 英文單字卡 PWA',
         start_url: '/',
         display: 'standalone',
-        background_color: '#ffffff',
-        theme_color: '#aa3bff',
+        background_color: '#f5f0e3',
+        theme_color: '#b3431f',
         icons: [
           {
             src: 'pwa-192x192.png',

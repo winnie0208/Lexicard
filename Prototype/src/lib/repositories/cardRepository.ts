@@ -6,8 +6,8 @@ import type { Card } from '../../types/card'
 
 export interface CreateCardInput {
   word: string
+  partOfSpeech?: string
   phonetic?: string
-  note?: string
 }
 
 export type UpdateCardInput = Partial<Omit<Card, 'id' | 'createdAt' | 'updatedAt'>>
@@ -18,9 +18,9 @@ export async function createCard(input: CreateCardInput): Promise<Card> {
     id: generateId(),
     word: input.word,
     normalizedWord: normalizeWord(input.word),
+    partOfSpeech: input.partOfSpeech ?? '',
     phonetic: input.phonetic ?? '',
     pronunciationAccent: 'US',
-    note: input.note ?? '',
     isStarred: false,
     repeatCount: 0,
     errorCount: 0,

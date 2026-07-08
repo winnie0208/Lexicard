@@ -4,11 +4,11 @@ import type { Sense } from '../../types/sense'
 
 export interface CreateSenseInput {
   cardId: string
-  partOfSpeech: string
   chineseMeaning: string
-  usageContext?: string
-  exampleSentence?: string
-  exampleSentenceTranslation?: string
+  usageContext: string
+  exampleSentence: string
+  exampleSentenceTranslation: string
+  note?: string
   isPrimary?: boolean
 }
 
@@ -19,11 +19,11 @@ export async function createSense(input: CreateSenseInput): Promise<Sense> {
   const sense: Sense = {
     id: generateId(),
     cardId: input.cardId,
-    partOfSpeech: input.partOfSpeech,
     chineseMeaning: input.chineseMeaning,
-    usageContext: input.usageContext ?? '',
-    exampleSentence: input.exampleSentence ?? '',
-    exampleSentenceTranslation: input.exampleSentenceTranslation ?? '',
+    usageContext: input.usageContext,
+    exampleSentence: input.exampleSentence,
+    exampleSentenceTranslation: input.exampleSentenceTranslation,
+    note: input.note ?? '',
     isPrimary: input.isPrimary ?? false,
     createdAt: now,
     updatedAt: now,
@@ -48,8 +48,14 @@ export async function updateSense(
   return db.senses.get(id)
 }
 
-export function deleteSense(id: string): Promise<void> {
-  return db.senses.delete(id)
+export async function deleteSense(id: string): Promise<void> {
+  await db.transaction('rw', db.senses, db.relations, async () => {
+    const orphanedRelations = await db.relations
+      .filter((relation) => relation.sourceSenseId === id || relation.targetSenseId === id)
+      .toArray()
+    await db.relations.bulkDelete(orphanedRelations.map((relation) => relation.id))
+    await db.senses.delete(id)
+  })
 }
 
 export async function setPrimarySense(cardId: string, senseId: string): Promise<void> {

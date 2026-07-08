@@ -1,1 +1,68 @@
 @import 'tailwindcss';
+
+@theme {
+  --color-paper: #f5f0e3;
+  --color-paper-deep: #eae1cb;
+  --color-surface: #fffdf8;
+  --color-ink: #26221b;
+  --color-ink-soft: #6f6555;
+  --color-rule: #d9cdb2;
+  --color-accent: #b3431f;
+  --color-accent-soft: #f1ded0;
+  --color-sage: #5c6b4d;
+  --color-gold: #b1802a;
+  --color-gold-soft: #f6e6c4;
+
+  --font-display: 'Fraunces', 'Iowan Old Style', 'Georgia', serif;
+  --font-body: 'Work Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  --radius-card: 1.5rem;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-paper);
+  }
+
+  body {
+    min-height: 100svh;
+    margin: 0;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--color-accent);
+    color: var(--color-paper);
+  }
+
+  input[type='search']::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  button,
+  a,
+  input,
+  select {
+    font-family: inherit;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-rise-in {
+  animation: rise-in 0.35s ease-out both;
+}

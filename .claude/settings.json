@@ -13,7 +13,8 @@
       "Bash(tasklist //FI \"PID eq 25312\")",
       "Bash(taskkill //F //PID 28120)",
       "Bash(taskkill //F //PID 25312)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/)",
+      "Bash(node scripts/generate-pwa-icons.cjs)"
     ]
   }
 }

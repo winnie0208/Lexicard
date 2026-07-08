@@ -1,26 +1,32 @@
 import { NavLink } from 'react-router'
+import { BoltIcon, BookIcon, QuillIcon } from './icons'
 
 const navItems = [
-  { to: '/', label: '單字庫' },
-  { to: '/add', label: '新增單字' },
-  { to: '/study', label: '快速學習' },
-]
+  { to: '/', label: '單字庫', Icon: BookIcon },
+  { to: '/add', label: '新增單字', Icon: QuillIcon },
+  { to: '/study', label: '快速學習', Icon: BoltIcon },
+] as const
 
 function NavBar() {
   return (
-    <nav className="flex border-b border-gray-200 bg-white">
-      {navItems.map((item) => (
+    <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-rule bg-surface pb-[env(safe-area-inset-bottom)]">
+      {navItems.map(({ to, label, Icon }) => (
         <NavLink
-          key={item.to}
-          to={item.to}
-          end={item.to === '/'}
+          key={to}
+          to={to}
+          end={to === '/'}
           className={({ isActive }) =>
-            `flex-1 py-3 text-center text-sm font-medium ${
-              isActive ? 'border-b-2 border-purple-600 text-purple-600' : 'text-gray-500'
+            `flex flex-1 flex-col items-center gap-1 py-3 text-xs font-semibold ${
+              isActive ? 'text-accent' : 'text-ink-soft'
             }`
           }
         >
-          {item.label}
+          {({ isActive }) => (
+            <>
+              <Icon className="h-7 w-7" filled={isActive} />
+              {label}
+            </>
+          )}
         </NavLink>
       ))}
     </nav>
