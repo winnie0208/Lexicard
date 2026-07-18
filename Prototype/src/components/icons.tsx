@@ -161,6 +161,15 @@ export function PlusIcon({ className }: IconProps) {
   )
 }
 
+export function SendIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <path d="M10 15.5v-11" />
+      <path d="m5.8 8.7 4.2-4.2 4.2 4.2" />
+    </svg>
+  )
+}
+
 export function TrashIcon({ className }: IconProps) {
   return (
     <svg {...base} className={className} aria-hidden="true">
@@ -177,6 +186,44 @@ export function CheckIcon({ className }: IconProps) {
   return (
     <svg {...base} className={className} aria-hidden="true">
       <path d="m4.5 10.5 3.5 3.5 7.5-8" />
+    </svg>
+  )
+}
+
+export function SettingsIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <circle cx="10" cy="10" r="2.6" />
+      <path d="M10 3.2v1.9" />
+      <path d="M10 14.9v1.9" />
+      <path d="M16.8 10h-1.9" />
+      <path d="M5.1 10H3.2" />
+      <path d="m15.1 4.9-1.3 1.3" />
+      <path d="m6.2 13.8-1.3 1.3" />
+      <path d="m15.1 15.1-1.3-1.3" />
+      <path d="m6.2 6.2-1.3-1.3" />
+    </svg>
+  )
+}
+
+export function ListIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <path d="M7 5.5h9.5" />
+      <path d="M7 10h9.5" />
+      <path d="M7 14.5h9.5" />
+      <circle cx="3.6" cy="5.5" r="0.9" fill="currentColor" stroke="none" />
+      <circle cx="3.6" cy="10" r="0.9" fill="currentColor" stroke="none" />
+      <circle cx="3.6" cy="14.5" r="0.9" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+export function CloseIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <path d="m5.5 5.5 9 9" />
+      <path d="m14.5 5.5-9 9" />
     </svg>
   )
 }

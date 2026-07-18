@@ -4,7 +4,12 @@
 // can't end up hidden or overlapped by the bottom nav bar. Not rendered in
 // production builds.
 import { useState } from 'react'
+import { useLocation } from 'react-router'
 import { seedDevData, clearAllData } from '../lib/devSeed'
+import {
+  CLEAR_COMPLEX_CONVERSATION_DEMO_EVENT,
+  LOAD_COMPLEX_CONVERSATION_DEMO_EVENT,
+} from '../lib/devEvents'
 
 const VISIBILITY_STORAGE_KEY = 'lexicard-dev-panel-visible'
 
@@ -17,6 +22,8 @@ function readStoredVisibility(): boolean {
 }
 
 function DevSeedPanel() {
+  const location = useLocation()
+  const isOnAddWordPage = location.pathname === '/add'
   const [isVisible, setIsVisible] = useState(readStoredVisibility)
   const [isBusy, setIsBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -96,6 +103,26 @@ function DevSeedPanel() {
       >
         清空資料
       </button>
+      {isOnAddWordPage && (
+        <>
+          <span className="h-4 w-px bg-amber-300" aria-hidden="true" />
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event(LOAD_COMPLEX_CONVERSATION_DEMO_EVENT))}
+            className="rounded-full bg-amber-600 px-3 py-1.5 text-white"
+          >
+            灌入複雜 AI 對話範例
+          </button>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event(CLEAR_COMPLEX_CONVERSATION_DEMO_EVENT))}
+            className="rounded-full border border-amber-600 px-3 py-1.5 text-amber-700"
+          >
+            清空對話
+          </button>
+          <span className="text-amber-700">需先灌入測試資料（book／set／watch／bank）</span>
+        </>
+      )}
       {message && (
         <span className={isError ? 'font-medium text-red-600' : 'text-amber-800'}>
           {isError ? `錯誤：${message}` : message}

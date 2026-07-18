@@ -5,7 +5,6 @@ import type { Sense } from '../../types/sense'
 export interface CreateSenseInput {
   cardId: string
   chineseMeaning: string
-  usageContext: string
   exampleSentence: string
   exampleSentenceTranslation: string
   note?: string
@@ -20,7 +19,6 @@ export async function createSense(input: CreateSenseInput): Promise<Sense> {
     id: generateId(),
     cardId: input.cardId,
     chineseMeaning: input.chineseMeaning,
-    usageContext: input.usageContext,
     exampleSentence: input.exampleSentence,
     exampleSentenceTranslation: input.exampleSentenceTranslation,
     note: input.note ?? '',

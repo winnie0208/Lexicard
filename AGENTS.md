@@ -1,35 +1,129 @@
-# LexiCard Agent Notes
+# LexiCard Agent 工作規範
 
-## Project Context
+## 1. 專案背景
 
-- LexiCard is an iPad handwriting + AI English vocabulary card PWA.
-- Read `LexiCard_PRD.md`, `Log.md`, and `session_handoff.md` before planning, designing, or implementing meaningful changes.
+- LexiCard 是以 iPad 手寫輸入與 AI 輔助為核心的英文單字卡 PWA。
+- 實際前端程式碼位於 `Prototype/`。
+- `AGENTS.md` 必須保留此檔名，作為專案層級的 Codex 工作指示。
 
-## Session Startup
+## 2. 文件職責與優先順序
 
-- At the beginning of every new session, automatically read the project startup script or agent notes, `Log.md`, and `LexiCard_PRD.md` to understand the current project context.
-- Also read `session_handoff.md` when the task involves planning, design, development handoff, or continuing previous work.
+各文件只負責一種主要問題：
 
-## Development Phases
+1. 使用者最新且明確的指示：本次工作的最高優先依據。
+2. `LexiCard_PRD.md`：定義目前有效的產品規格與使用者行為。
+3. `MVP_Task_Breakdown.md`：定義 MVP 的任務範圍、依賴、順序與驗收條件。
+4. `handoff.md`：定義目前做到哪裡、下一步、blocker 與尚待驗證事項。
+5. `Log.md`：保存重要決策、里程碑、原因與歷史，不單獨作為現行規格。
 
-- Development phases in `LexiCard_PRD.md` should be broken down into smaller task items so each task can be handled as one focused session.
-- Each session should have a clear task boundary, expected output, current status, and next step recorded in `Log.md` when meaningful progress or changes happen.
+- 若文件互相衝突，先以使用者最新且明確的決策為準，再同步更新真正負責該內容的文件。
+- 不要將相同詳細內容完整複製到 PRD、Task Breakdown、Log 與 handoff。
+- 現行規格看 PRD，開發計畫看 MVP Task Breakdown，歷史原因看 Log，目前狀態看 handoff。
 
-## Testing Workflow
+## 3. Session 啟動
 
-- Every feature development session should include human-run unit testing for that feature.
-- Record the tested feature, test scope, result, and remaining risks or follow-up items in `Log.md`.
+- 新 session 開始時，先閱讀 `AGENTS.md`、`LexiCard_PRD.md`、`MVP_Task_Breakdown.md` 與 `handoff.md`。
+- 先讀取 `Log.md` 頂部規則與最新結構化紀錄；舊格式歷史只在任務涉及相關功能、決策或問題時搜尋並讀取，不必每次完整載入全部歷史。
+- 任務涉及延續先前工作、開發進度、規劃、handoff 或 blocker 時，以 `handoff.md` 的目前狀態為起點，再用程式碼與測試確認是否仍準確。
+- 若只是小型文案或局部樣式修正，可優先讀取與任務直接相關的檔案，但仍須遵守本文件規則。
+- 若文件與目前程式碼或測試結果不一致，應指出差異，不可靜默假設文件一定正確。
 
-## Iteration Logging
+## 4. 開發任務與階段
 
-- `Log.md` is the single source of truth for project iteration records.
-- After any substantial PRD change, product decision, feature development, technical decision, data model change, AI prompt change, important bug fix, or unfinished handoff, update `Log.md`.
-- Each substantial log entry should include the date, summary, affected scope, current progress, and next steps.
-- Small copy edits may be folded into the nearest related entry, but changes that affect product understanding or implementation direction need their own entry.
+- 依 `MVP_Task_Breakdown.md` 判斷任務邊界、預期輸出、依賴與驗收條件。
+- 每次開發應維持聚焦範圍；不要因順手發現其他問題就擴張為不相關工作。
+- 日常進度不需要每次寫入 Log 或 handoff。
+- 重要里程碑、正式決策、執行順序改變或跨 session 未完成工作，依下方規則更新對應文件。
 
-## Handoff Maintenance
+## 5. 測試規範
 
-- Keep `session_handoff.md` as a compact, current handoff summary, not a full change log.
-- Update `session_handoff.md` after meaningful milestones, before ending a long session, when context usage is getting high, after major PRD or implementation changes, and whenever the next task or current blocker changes.
-- A handoff update should capture the current objective, completed work, in-progress work, next steps, important decisions, open questions, known risks, and files touched.
-- If time or quota is running low, prioritize a short `session_handoff.md` update over polishing nonessential documentation.
+- 功能開發與重要 bug 修正應依變更範圍和風險執行適當測試。
+- 最終回覆應說明已執行的測試、結果、未測範圍與剩餘風險。
+- 需要使用者在 iPad、iPhone 或桌機手動測試時，提供清楚且聚焦的測試步驟。
+- 只有里程碑、重大 bug、發布檢查、重要 regression 或未解風險的測試結果需要寫入 `Log.md`。
+
+## 6. Log.md 更新規範
+
+`Log.md` 是重要事件的歷史紀錄，不是逐次修改清單。
+
+### 自動更新條件
+
+符合下列任一條件時，自動更新 `Log.md`：
+
+- 完成 PRD Phase、MVP 里程碑或發布檢查點。
+- 產品規則、使用流程或功能範圍發生實質改變。
+- 技術架構、資料模型、API contract 或主要實作方向改變。
+- AI provider、model、prompt、輸出格式或 fallback 策略改變。
+- 修復重大或容易再次發生，且原因或解法值得保留的 bug。
+- 測試發現重要 regression、限制、未解風險或後續工作。
+- 使用者明確要求更新、記錄或整理進度。
+
+### 不自動更新的情況
+
+- 文案、命名、註解或小型樣式調整。
+- 一般 UI 間距、顏色、hover、icon 或 scrollbar 微調。
+- 不改變外部行為的局部重構。
+- 一般且原因明確的小型 bug fix。
+- 探索性工作、尚未採用的方案或重複資訊。
+- 單純因為 session 結束或 context 壓縮。
+
+### 呈現方式
+
+- 同一目標的連續調整合併為一則紀錄。
+- 新紀錄使用 `LOG-YYYYMMDD-NN` 識別碼。
+- 每則紀錄依需要包含：類型、狀態、摘要、原因或決策、影響範圍、測試、風險、下一步、相關檔案與取代關係。
+- 決策狀態使用：`提案中`、`待確認`、`已核准`、`實作中`、`已實作`、`暫時例外`、`已撤回`、`已被取代`。
+- 舊決策不得直接刪除；以「已被 LOG-... 取代」保留歷史脈絡。
+
+## 7. handoff.md 更新規範
+
+`handoff.md` 是最新狀態快照，不是完整歷史，也不重述完整 PRD。
+
+### 自動更新條件
+
+符合下列任一條件時，自動更新 `handoff.md`：
+
+- 使用者表示暫停、稍後繼續、切換不相關任務或要求 handoff。
+- 目前目標仍未完成，且已出現明確的 session 邊界。
+- 因資訊、權限、API Key、外部服務或使用者決策而無法繼續。
+- 目前 blocker、實作方向或立即下一步發生重大改變。
+- 發生 context 壓縮，需要保存或重建目前工作狀態。
+- 使用者明確要求更新或整理 handoff。
+
+### 不自動更新的情況
+
+- Agent 還能在目前 session 直接繼續工作。
+- 只是等待 build、測試或工具執行。
+- 測試失敗但仍在同一次工作中修正。
+- 剩餘事項不屬於本次任務範圍。
+- 工作已完成，且現有 handoff 仍準確。
+
+### 呈現方式
+
+- 以覆寫方式維持最新狀態，移除已完成、失效或重複資訊。
+- 優先控制在約 100 至 150 行內。
+- 固定章節為：文件狀態、目前目標、Phase 狀態、已完成、未完成、下一步、blocker、測試狀態、重要決策、實作注意事項、重要檔案。
+- 產品完整規則連結至 `LexiCard_PRD.md`；歷史原因連結至 `Log.md`；階段細節連結至 `MVP_Task_Breakdown.md`。
+
+## 8. Context 壓縮檢查點
+
+- Context 壓縮視為工作檢查點，但只有在 Codex 能辨識壓縮事件或專案已設定 lifecycle hook 時，才能可靠自動觸發。
+- 壓縮後，在繼續原任務前重新確認 `handoff.md` 是否需要更新。
+- 若可取得壓縮前 transcript 或 checkpoint，優先用它重建狀態，不只依賴壓縮摘要。
+- 每次壓縮都檢查 `Log.md`，但只有符合 Log 自動更新條件時才新增紀錄。
+- 壓縮只有一般進度時，只更新 handoff，不新增 Log 條目。
+- 完成檢查點後繼續原任務，不需要再次要求使用者確認。
+
+## 9. 規格衝突與決策同步
+
+- 正式產品決策與 PRD 不同：更新 `LexiCard_PRD.md`，並在 Log 記錄原因、影響與取代關係。
+- 任務範圍、依賴、順序或驗收條件改變：更新 `MVP_Task_Breakdown.md`。
+- 暫時技術例外：不要改寫成正式產品規格；在 Log 記錄原因、風險和解除條件，並在仍影響下一步時放入 handoff。
+- 尚未核准的討論：標示為提案或待確認，不可直接視為實作需求。
+- 若無法判斷哪個規則有效，停止受影響部分的實作並要求使用者確認。
+
+## 10. 使用者指示優先
+
+- 使用者可明確要求更新或不更新特定文件。
+- 使用者最新指示優先於本文件的自動更新規則。
+- 若使用者表示本次不要更新紀錄文件，除非涉及資料安全或不可逆風險，否則不要自行更新。

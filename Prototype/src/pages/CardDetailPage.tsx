@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import FamiliarityIcon from '../components/FamiliarityIcon'
 import SenseSection from '../components/SenseSection'
 import RelationSection from '../components/RelationSection'
@@ -37,13 +37,14 @@ function CardDetailPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-5 pt-6 pb-10">
-      <Link
-        to="/"
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
         className="mb-4 -ml-2 flex min-h-[44px] items-center gap-1 px-2 text-sm font-semibold text-ink-soft hover:text-accent"
       >
         <ChevronLeftIcon className="h-5 w-5" />
-        單字庫
-      </Link>
+        上一頁
+      </button>
 
       <div className="rounded-card bg-surface py-5 pr-5 pl-3 shadow-sm">
         <div className="flex items-start gap-1.5">

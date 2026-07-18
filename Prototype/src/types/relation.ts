@@ -14,12 +14,17 @@ export interface Relation {
   id: string
   sourceCardId: string
   targetCardId: string
-  // The relation links one specific sense of each card (a card can have
-  // multiple senses; the relation is only meaningful for a particular pair).
-  sourceSenseId: string
-  targetSenseId: string
+  // Pairing level depends on relationType (PRD 3.3 關聯配對): similarMeaning
+  // links two specific senses so both senseIds are required; confusable and
+  // partOfSpeechVariant are card-level properties so senseIds stay undefined.
+  sourceSenseId?: string
+  targetSenseId?: string
   relationType: RelationType
   relationSource: RelationSource
   description: string
   createdAt: number
+}
+
+export function isSenseLevelRelationType(relationType: RelationType): boolean {
+  return relationType === 'similarMeaning'
 }

@@ -71,7 +71,7 @@ function CardLibraryPage() {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="搜尋"
-            className="min-h-[44px] w-full rounded-full border border-rule bg-surface py-2.5 pr-4 pl-11 text-sm text-ink placeholder:text-ink-soft/50 focus:border-accent focus:outline-none"
+            className="min-h-[44px] w-full rounded-full border border-rule bg-surface py-2.5 pr-4 pl-11 text-base leading-6 tracking-wide text-ink placeholder:text-ink-soft/50 focus:border-accent focus:outline-none"
           />
         </div>
 

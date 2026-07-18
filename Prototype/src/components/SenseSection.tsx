@@ -57,7 +57,7 @@ function SenseSection({ cardId, senses }: SenseSectionProps) {
         ) : (
           <div
             ref={scrollRef}
-            className="-mx-5 flex cursor-grab items-stretch gap-3 overflow-x-auto px-5 pb-2 [-webkit-mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%-12px),transparent)] [mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%-12px),transparent)] [scrollbar-width:none] snap-x snap-mandatory scroll-px-5 [&::-webkit-scrollbar]:hidden"
+            className="-mx-5 flex cursor-grab items-stretch gap-3 overflow-x-auto px-5 pb-2 [-webkit-mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%-12px),transparent)] [mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%-12px),transparent)] [scrollbar-width:none] snap-x snap-proximity scroll-px-5 [&::-webkit-scrollbar]:hidden"
           >
             {sortedSenses
               .filter((sense) => sense.id !== editingSenseId)
@@ -72,7 +72,7 @@ function SenseSection({ cardId, senses }: SenseSectionProps) {
                         {sense.chineseMeaning}
                       </p>
                       {sense.isPrimary && (
-                        <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-sm font-semibold text-accent">
+                        <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-sm font-semibold text-white">
                           始
                         </span>
                       )}
@@ -82,16 +82,13 @@ function SenseSection({ cardId, senses }: SenseSectionProps) {
                       onDelete={() => setSenseToDelete(sense)}
                     />
                   </div>
-                  {sense.usageContext && (
-                    <p className="mt-1 text-sm text-ink-soft">{sense.usageContext}</p>
-                  )}
                   {sense.exampleSentence && (
-                    <p className="mt-2 text-lg leading-tight font-semibold text-ink">
+                    <p className="mt-2 text-base leading-tight font-medium text-ink">
                       {sense.exampleSentence}
                     </p>
                   )}
                   {sense.exampleSentenceTranslation && (
-                    <p className="mt-1 text-base text-ink">{sense.exampleSentenceTranslation}</p>
+                    <p className="mt-1 text-sm text-ink">{sense.exampleSentenceTranslation}</p>
                   )}
                   {sense.note && (
                     <p className="mt-2 border-t border-dashed border-rule pt-2 text-sm text-ink-soft/70">
@@ -193,7 +190,6 @@ interface SenseFormProps {
 
 function SenseForm({ cardId, initialSense, otherSenses, onDone }: SenseFormProps) {
   const [chineseMeaning, setChineseMeaning] = useState(initialSense?.chineseMeaning ?? '')
-  const [usageContext, setUsageContext] = useState(initialSense?.usageContext ?? '')
   const [exampleSentence, setExampleSentence] = useState(initialSense?.exampleSentence ?? '')
   const [exampleSentenceTranslation, setExampleSentenceTranslation] = useState(
     initialSense?.exampleSentenceTranslation ?? '',
@@ -211,7 +207,6 @@ function SenseForm({ cardId, initialSense, otherSenses, onDone }: SenseFormProps
     otherSenses.some((other) => other.chineseMeaning.trim() === trimmedMeaning)
   const isRequiredFilled =
     trimmedMeaning.length > 0 &&
-    usageContext.trim().length > 0 &&
     exampleSentence.trim().length > 0 &&
     exampleSentenceTranslation.trim().length > 0
 
@@ -225,7 +220,6 @@ function SenseForm({ cardId, initialSense, otherSenses, onDone }: SenseFormProps
 
     const fields = {
       chineseMeaning,
-      usageContext,
       exampleSentence,
       exampleSentenceTranslation,
       note,
@@ -264,14 +258,6 @@ function SenseForm({ cardId, initialSense, otherSenses, onDone }: SenseFormProps
           setChineseMeaning(value)
           setPendingDuplicateConfirm(false)
         }}
-      />
-      <LabeledInput
-        id={`sense-context-${formInstanceId}`}
-        label="使用情境"
-        required
-        placeholder="必填"
-        value={usageContext}
-        onChange={setUsageContext}
       />
       <LabeledInput
         id={`sense-example-${formInstanceId}`}

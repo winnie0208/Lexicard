@@ -1,24 +1,35 @@
 import { db } from '../db'
 import { generateId } from '../generateId'
-import type { Relation, RelationSource, RelationType } from '../../types/relation'
+import {
+  isSenseLevelRelationType,
+  type Relation,
+  type RelationSource,
+  type RelationType,
+} from '../../types/relation'
 
 export interface CreateRelationInput {
   sourceCardId: string
   targetCardId: string
-  sourceSenseId: string
-  targetSenseId: string
+  // Required only for sense-level relation types (similarMeaning); ignored
+  // for card-level types (confusable, partOfSpeechVariant).
+  sourceSenseId?: string
+  targetSenseId?: string
   relationType: RelationType
   relationSource: RelationSource
   description?: string
 }
 
 export async function createRelation(input: CreateRelationInput): Promise<Relation> {
+  const isSenseLevel = isSenseLevelRelationType(input.relationType)
+  if (isSenseLevel && (!input.sourceSenseId || !input.targetSenseId)) {
+    throw new Error('相似意思關聯必須指定雙方的 sense。')
+  }
   const relation: Relation = {
     id: generateId(),
     sourceCardId: input.sourceCardId,
     targetCardId: input.targetCardId,
-    sourceSenseId: input.sourceSenseId,
-    targetSenseId: input.targetSenseId,
+    sourceSenseId: isSenseLevel ? input.sourceSenseId : undefined,
+    targetSenseId: isSenseLevel ? input.targetSenseId : undefined,
     relationType: input.relationType,
     relationSource: input.relationSource,
     description: input.description ?? '',
@@ -44,9 +55,23 @@ export function getRelationsBySenseId(senseId: string): Promise<Relation[]> {
 
 export async function updateRelation(
   id: string,
-  changes: { description: string; relationType: RelationType },
+  changes: {
+    description: string
+    relationType: RelationType
+    sourceSenseId?: string
+    targetSenseId?: string
+  },
 ): Promise<void> {
-  await db.relations.update(id, changes)
+  const isSenseLevel = isSenseLevelRelationType(changes.relationType)
+  if (isSenseLevel && (!changes.sourceSenseId || !changes.targetSenseId)) {
+    throw new Error('相似意思關聯必須指定雙方的 sense。')
+  }
+  await db.relations.update(id, {
+    description: changes.description,
+    relationType: changes.relationType,
+    sourceSenseId: isSenseLevel ? changes.sourceSenseId : undefined,
+    targetSenseId: isSenseLevel ? changes.targetSenseId : undefined,
+  })
 }
 
 export function deleteRelation(id: string): Promise<void> {

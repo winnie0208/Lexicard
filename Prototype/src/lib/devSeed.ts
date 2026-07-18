@@ -10,11 +10,14 @@ import { db } from './db'
 import { createCard } from './repositories/cardRepository'
 import { createSense } from './repositories/senseRepository'
 import { createRelation } from './repositories/relationRepository'
-import type { RelationSource, RelationType } from '../types/relation'
+import {
+  isSenseLevelRelationType,
+  type RelationSource,
+  type RelationType,
+} from '../types/relation'
 
 interface SeedSense {
   chineseMeaning: string
-  usageContext: string
   exampleSentence: string
   exampleSentenceTranslation: string
   note: string
@@ -36,7 +39,8 @@ interface SeedRelation {
   source: string
   target: string
   // Index into that card's `senses` array; defaults to 0 (the primary
-  // sense) when a relation isn't tied to one specific meaning.
+  // sense). Only used for sense-level relation types (similarMeaning) —
+  // card-level types (confusable, partOfSpeechVariant) carry no senseIds.
   sourceSenseIndex?: number
   targetSenseIndex?: number
   relationType: RelationType
@@ -56,7 +60,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '書',
-        usageContext: '泛指紙本書籍',
         exampleSentence: 'She is reading a book.',
         exampleSentenceTranslation: '她正在看一本書。',
         note: '可以是紙本或電子書',
@@ -74,7 +77,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '預訂',
-        usageContext: '預先安排座位、房間或票券',
         exampleSentence: 'I booked a table for two.',
         exampleSentenceTranslation: '我訂了一張兩人桌。',
         note: '常用於餐廳、飯店、機票',
@@ -92,7 +94,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '看、看起來',
-        usageContext: '用眼睛觀看，或呈現某種樣子',
         exampleSentence: 'She looked at the photo.',
         exampleSentenceTranslation: '她看了那張照片。',
         note: '與 book 拼字相近，容易看錯',
@@ -110,7 +111,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '新奇的',
-        usageContext: '形容新穎、前所未見的事物',
         exampleSentence: 'That is a novel idea.',
         exampleSentenceTranslation: '那是一個新奇的想法。',
         note: '常用於描述發明、想法或方法',
@@ -129,7 +129,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '小說',
-        usageContext: '長篇虛構文學作品',
         exampleSentence: 'She wrote her first novel last year.',
         exampleSentenceTranslation: '她去年寫了第一本小說。',
         note: '通常指長篇故事，短篇稱作 short story',
@@ -148,7 +147,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '新鮮的',
-        usageContext: '形容食物新鮮或狀態嶄新',
         exampleSentence: 'This bread is fresh.',
         exampleSentenceTranslation: '這個麵包很新鮮。',
         note: '也可形容天氣涼爽',
@@ -166,7 +164,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '原創的',
-        usageContext: '形容最初、非模仿的事物',
         exampleSentence: 'This is an original painting.',
         exampleSentenceTranslation: '這是一幅原創畫作。',
         note: '也可作名詞，指「原作」',
@@ -184,7 +181,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '銀行',
-        usageContext: '辦理存款、貸款等業務的金融機構',
         exampleSentence: 'I need to go to the bank.',
         exampleSentenceTranslation: '我需要去銀行一趟。',
         note: '',
@@ -192,7 +188,6 @@ const SEED_CARDS: SeedCard[] = [
       },
       {
         chineseMeaning: '河岸',
-        usageContext: '河流兩側的陸地邊緣',
         exampleSentence: 'They sat on the bank of the river.',
         exampleSentenceTranslation: '他們坐在河岸邊。',
         note: '此意思較少用，注意上下文',
@@ -209,7 +204,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '長椅',
-        usageContext: '公園或戶外供多人乘坐的長椅',
         exampleSentence: 'We sat on a bench in the park.',
         exampleSentenceTranslation: '我們坐在公園的長椅上。',
         note: '拼字與 bank 相近，容易看錯',
@@ -228,7 +222,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '錢',
-        usageContext: '用於交易的貨幣',
         exampleSentence: "He doesn't have much money.",
         exampleSentenceTranslation: '他沒有很多錢。',
         note: '不可數名詞，沒有複數形',
@@ -247,7 +240,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '跑步',
-        usageContext: '雙腳快速移動前進的動作',
         exampleSentence: 'He runs every morning.',
         exampleSentenceTranslation: '他每天早上跑步。',
         note: '',
@@ -265,7 +257,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '一次跑步；一連串',
-        usageContext: '指一次跑步的行程，或連續發生的一段情況',
         exampleSentence: 'We went for a run this morning.',
         exampleSentenceTranslation: '我們今天早上去跑了一趟步。',
         note: '也可指「連續」，如 a run of bad luck（一連串的壞運氣）',
@@ -283,7 +274,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '走路',
-        usageContext: '步行移動',
         exampleSentence: 'I like to walk in the park.',
         exampleSentenceTranslation: '我喜歡在公園散步。',
         note: '速度比 run 慢',
@@ -301,7 +291,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '馬拉松',
-        usageContext: '長距離賽跑比賽，正式全馬為 42.195 公里',
         exampleSentence: 'She finished her first marathon.',
         exampleSentenceTranslation: '她完成了她的第一場馬拉松。',
         note: '',
@@ -319,7 +308,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '光',
-        usageContext: '光線或照明',
         exampleSentence: 'Turn on the light, please.',
         exampleSentenceTranslation: '請把燈打開。',
         note: '也可作動詞「點燃」，但此卡僅收錄名詞意',
@@ -337,7 +325,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '輕的',
-        usageContext: '形容重量不重',
         exampleSentence: 'This bag is very light.',
         exampleSentenceTranslation: '這個包包很輕。',
         note: '與 heavy 意思相反',
@@ -355,7 +342,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '明亮的',
-        usageContext: '形容光線強烈或色彩鮮豔',
         exampleSentence: 'The room is very bright.',
         exampleSentenceTranslation: '這個房間很明亮。',
         note: '也可比喻聰明',
@@ -373,7 +359,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '重的',
-        usageContext: '形容重量大',
         exampleSentence: 'The box is too heavy to carry.',
         exampleSentenceTranslation: '這個箱子太重了搬不動。',
         note: '與 light（形容詞）意思相反',
@@ -391,7 +376,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '安靜的',
-        usageContext: '形容聲音小或環境不吵鬧',
         exampleSentence: 'Please keep quiet in the library.',
         exampleSentenceTranslation: '請在圖書館保持安靜。',
         note: '拼字與 quite 相近，容易混淆',
@@ -409,7 +393,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '相當、頗',
-        usageContext: '用於加強程度的副詞',
         exampleSentence: 'This test is quite difficult.',
         exampleSentenceTranslation: '這個測驗相當困難。',
         note: '拼字與 quiet 相近，容易混淆',
@@ -428,7 +411,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '開心的',
-        usageContext: '形容感到快樂、滿足',
         exampleSentence: 'She looks very happy today.',
         exampleSentenceTranslation: '她今天看起來很開心。',
         note: '',
@@ -446,7 +428,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '高興的',
-        usageContext: '通常因特定原因而感到高興，接 that 子句或 to V',
         exampleSentence: "I'm glad to see you.",
         exampleSentenceTranslation: '我很高興見到你。',
         note: '較少直接放在名詞前修飾（不太說 a glad person）',
@@ -464,7 +445,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '信',
-        usageContext: '書面郵寄的訊息',
         exampleSentence: 'She wrote a letter to her grandmother.',
         exampleSentenceTranslation: '她寫了一封信給她的祖母。',
         note: '',
@@ -472,7 +452,6 @@ const SEED_CARDS: SeedCard[] = [
       },
       {
         chineseMeaning: '字母',
-        usageContext: '組成單字的書寫符號',
         exampleSentence: 'The word "cat" has three letters.',
         exampleSentenceTranslation: '「cat」這個字有三個字母。',
         note: '注意與「word（單字）」不同',
@@ -489,7 +468,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '梯子',
-        usageContext: '用於攀爬到高處的工具',
         exampleSentence: 'He climbed up the ladder.',
         exampleSentenceTranslation: '他爬上了梯子。',
         note: '拼字與 letter 相近，容易看錯',
@@ -507,7 +485,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '郵件',
-        usageContext: '透過郵局寄送的信件或包裹',
         exampleSentence: 'I received a mail from my friend.',
         exampleSentenceTranslation: '我收到了朋友寄來的郵件。',
         note: '美式英文常用，英式英文多用 post',
@@ -525,7 +502,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '觀看',
-        usageContext: '觀看螢幕上或眼前發生的事物',
         exampleSentence: 'They watched a movie together.',
         exampleSentenceTranslation: '他們一起看了一部電影。',
         note: '',
@@ -533,14 +509,12 @@ const SEED_CARDS: SeedCard[] = [
       },
       {
         chineseMeaning: '注意；當心',
-        usageContext: '提醒對方注意某件事或危險',
         exampleSentence: 'Watch out for the wet floor.',
         exampleSentenceTranslation: '小心地板濕滑。',
         note: '常用於片語 watch out',
       },
       {
         chineseMeaning: '照看；看顧',
-        usageContext: '短暫看管某人或某物',
         exampleSentence: 'Can you watch my bag for a second?',
         exampleSentenceTranslation: '你可以幫我看一下包包嗎？',
         note: '',
@@ -557,7 +531,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '手錶',
-        usageContext: '戴在手腕上用來看時間的裝置',
         exampleSentence: 'He checked the time on his watch.',
         exampleSentenceTranslation: '他看了看手錶上的時間。',
         note: '也可作動詞「觀看」，但此卡僅收錄名詞意',
@@ -575,7 +548,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '洗、清洗',
-        usageContext: '用水或清潔劑去除髒污',
         exampleSentence: 'She washes her hands before dinner.',
         exampleSentenceTranslation: '她在晚餐前洗手。',
         note: '拼字與 watch 相近，容易看錯',
@@ -593,7 +565,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '看見',
-        usageContext: '用眼睛感知，不一定刻意注視',
         exampleSentence: 'I can see the mountains from here.',
         exampleSentenceTranslation: '我從這裡可以看到山。',
         note: '與 watch 不同，watch 強調持續注視',
@@ -611,7 +582,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '春天',
-        usageContext: '一年四季中的其中一季，介於冬天與夏天之間',
         exampleSentence: 'Flowers bloom in spring.',
         exampleSentenceTranslation: '花朵在春天綻放。',
         note: '',
@@ -619,7 +589,6 @@ const SEED_CARDS: SeedCard[] = [
       },
       {
         chineseMeaning: '彈簧',
-        usageContext: '具有彈性、可壓縮回彈的金屬裝置',
         exampleSentence: 'The mattress has metal springs inside.',
         exampleSentenceTranslation: '這張床墊裡面有金屬彈簧。',
         note: '也可作動詞，指「跳躍」',
@@ -637,7 +606,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '一套；一組',
-        usageContext: '指相關物品組成的一套',
         exampleSentence: 'She bought a new set of dishes.',
         exampleSentenceTranslation: '她買了一套新餐具。',
         note: '',
@@ -645,28 +613,24 @@ const SEED_CARDS: SeedCard[] = [
       },
       {
         chineseMeaning: '（電視、收音機等）裝置',
-        usageContext: '指電子裝置整體，如電視機、收音機',
         exampleSentence: 'They watched the news on an old TV set.',
         exampleSentenceTranslation: '他們用一台舊電視機看新聞。',
         note: '',
       },
       {
         chineseMeaning: '（網球等）盤',
-        usageContext: '網球等運動比賽的計分單位',
         exampleSentence: 'She won the match in three sets.',
         exampleSentenceTranslation: '她以三盤獲勝了這場比賽。',
         note: '',
       },
       {
-        chineseMeaning: '佈景；場景',
-        usageContext: '電影或戲劇拍攝用的場景',
-        exampleSentence: 'The film set was built in a studio.',
-        exampleSentenceTranslation: '這部電影的佈景是在攝影棚搭建的。',
+        chineseMeaning: '一夥人；圈子',
+        exampleSentence: 'He is part of the fashionable set in the city.',
+        exampleSentenceTranslation: '他是城裡時尚圈的一員。',
         note: '',
       },
       {
         chineseMeaning: '（數學）集合',
-        usageContext: '數學上具有共同性質的元素組合',
         exampleSentence: 'Every even number belongs to this set.',
         exampleSentenceTranslation: '每個偶數都屬於這個集合。',
         note: '',
@@ -683,7 +647,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '群組；一群',
-        usageContext: '指一群人或一組相關事物',
         exampleSentence: 'They divided the students into four groups.',
         exampleSentenceTranslation: '他們把學生分成四組。',
         note: '',
@@ -701,7 +664,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '裝置；設備',
-        usageContext: '指具特定功能的電子或機械裝置',
         exampleSentence: 'This device can measure your heart rate.',
         exampleSentenceTranslation: '這個裝置可以測量你的心率。',
         note: '',
@@ -719,7 +681,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '場景；景象',
-        usageContext: '指某個地點發生的事件或畫面',
         exampleSentence: 'The sunset created a beautiful scene.',
         exampleSentenceTranslation: '夕陽形成了一幅美麗的景象。',
         note: '',
@@ -737,7 +698,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '坐',
-        usageContext: '使身體處於坐姿',
         exampleSentence: 'Please sit down and relax.',
         exampleSentenceTranslation: '請坐下放輕鬆。',
         note: '拼字與 set 相近，容易看錯',
@@ -755,7 +715,6 @@ const SEED_CARDS: SeedCard[] = [
     senses: [
       {
         chineseMeaning: '設定；放置',
-        usageContext: '將某物調整到特定狀態或放在某處',
         exampleSentence: 'She set the alarm for six o’clock.',
         exampleSentenceTranslation: '她把鬧鐘設定在六點。',
         note: '',
@@ -974,11 +933,16 @@ export async function seedDevData(): Promise<void> {
   }
 
   for (const relation of SEED_RELATIONS) {
+    const isSenseLevel = isSenseLevelRelationType(relation.relationType)
     await createRelation({
       sourceCardId: cardIdByKey.get(relation.source)!,
       targetCardId: cardIdByKey.get(relation.target)!,
-      sourceSenseId: senseIdsByKey.get(relation.source)![relation.sourceSenseIndex ?? 0],
-      targetSenseId: senseIdsByKey.get(relation.target)![relation.targetSenseIndex ?? 0],
+      sourceSenseId: isSenseLevel
+        ? senseIdsByKey.get(relation.source)![relation.sourceSenseIndex ?? 0]
+        : undefined,
+      targetSenseId: isSenseLevel
+        ? senseIdsByKey.get(relation.target)![relation.targetSenseIndex ?? 0]
+        : undefined,
       relationType: relation.relationType,
       relationSource: relation.relationSource,
       description: relation.description,

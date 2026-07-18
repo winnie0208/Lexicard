@@ -1,7 +1,8 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
 interface EmptyStateProps {
-  title: string
+  title: ReactNode
   description?: string
   illustrationSrc?: string
   actionTo?: string
@@ -11,6 +12,7 @@ interface EmptyStateProps {
     label: string
     onClick: () => void
   }
+  bordered?: boolean
 }
 
 function EmptyState({
@@ -21,9 +23,14 @@ function EmptyState({
   actionLabel,
   actionVariant = 'accent',
   secondaryAction,
+  bordered = true,
 }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center gap-4 rounded-card border-2 border-dashed border-rule px-6 py-14 text-center">
+    <div
+      className={`flex flex-col items-center gap-4 rounded-card px-6 py-14 text-center ${
+        bordered ? 'border-2 border-dashed border-rule' : ''
+      }`}
+    >
       {illustrationSrc && (
         <img src={illustrationSrc} alt="" className="h-28 w-auto" aria-hidden="true" />
       )}

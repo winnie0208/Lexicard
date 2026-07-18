@@ -22,7 +22,7 @@ function LabeledInput({ id, label, value, onChange, placeholder, required }: Lab
         placeholder={placeholder}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="min-h-[44px] w-full rounded-lg border border-rule bg-stone-100 px-3 py-2 text-lg font-semibold text-ink placeholder:text-base placeholder:font-normal placeholder:text-ink-soft/50 focus:border-accent focus:outline-none"
+        className="min-h-[44px] w-full rounded-lg border border-rule bg-stone-100 px-3 py-2 text-base leading-6 tracking-wide font-semibold text-ink placeholder:font-normal placeholder:text-ink-soft/50 focus:border-accent focus:outline-none"
       />
     </div>
   )

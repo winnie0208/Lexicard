@@ -8,7 +8,7 @@ import {
   updateRelation,
 } from '../lib/repositories/relationRepository'
 import { normalizeWord } from '../lib/normalizeWord'
-import { RELATION_TYPE_LABEL, type RelationType } from '../types/relation'
+import { RELATION_TYPE_LABEL, isSenseLevelRelationType, type RelationType } from '../types/relation'
 import type { RelationWithCard } from '../hooks/useCardDetail'
 import type { Card } from '../types/card'
 import type { Sense } from '../types/sense'
@@ -50,6 +50,22 @@ function RelationSection({ cardId, relationsWithCards }: RelationSectionProps) {
   useHorizontalWheelScroll(scrollRef, [relationsWithCards.length])
   useDragToScroll(scrollRef, [relationsWithCards.length])
 
+  // 關聯卡片需列出對方字卡的全部語意（使用者回饋）；以 liveQuery 取得讓
+  // 語意增修即時反映。
+  const allSenses = useLiveQuery(() => db.senses.toArray(), [])
+  const sensesByCardId = useMemo(() => {
+    const map = new Map<string, Sense[]>()
+    for (const sense of allSenses ?? []) {
+      const list = map.get(sense.cardId)
+      if (list) {
+        list.push(sense)
+      } else {
+        map.set(sense.cardId, [sense])
+      }
+    }
+    return map
+  }, [allSenses])
+
   const sortedRelationsWithCards = [...relationsWithCards].sort(
     (a, b) =>
       RELATION_TYPE_SORT_ORDER[a.relation.relationType] -
@@ -90,7 +106,7 @@ function RelationSection({ cardId, relationsWithCards }: RelationSectionProps) {
         {relationsWithCards.length > 0 && (
           <ul
             ref={scrollRef}
-            className="-mx-5 flex cursor-grab items-stretch gap-2 overflow-x-auto px-5 pb-2 [-webkit-mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%-12px),transparent)] [mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%-12px),transparent)] [scrollbar-width:none] snap-x snap-mandatory scroll-px-5 [&::-webkit-scrollbar]:hidden"
+            className="-mx-5 flex cursor-grab items-stretch gap-2 overflow-x-auto px-5 pb-2 [-webkit-mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%-12px),transparent)] [mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%-12px),transparent)] [scrollbar-width:none] snap-x snap-proximity scroll-px-5 [&::-webkit-scrollbar]:hidden"
           >
             {sortedRelationsWithCards
               .filter(({ relation }) => relation.id !== editingRelationId)
@@ -100,6 +116,7 @@ function RelationSection({ cardId, relationsWithCards }: RelationSectionProps) {
                   relation={relation}
                   otherCard={otherCard}
                   otherSense={otherSense}
+                  otherSenses={otherCard ? (sensesByCardId.get(otherCard.id) ?? []) : []}
                   onEdit={() => setEditingRelationId(relation.id)}
                   onDelete={() => setRelationToDelete({ relation, otherCard, otherSense })}
                 />
@@ -142,12 +159,23 @@ function RelationSection({ cardId, relationsWithCards }: RelationSectionProps) {
 interface RelationWordRowProps {
   otherCard: Card | undefined
   otherSense: RelationWithCard['otherSense']
+  stackPartOfSpeech?: boolean
 }
 
-function RelationWordRow({ otherCard, otherSense }: RelationWordRowProps) {
+function RelationWordRow({
+  otherCard,
+  otherSense,
+  stackPartOfSpeech = false,
+}: RelationWordRowProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <p className="truncate font-display text-2xl text-ink">
+    <div
+      className={
+        stackPartOfSpeech
+          ? 'flex flex-col items-start gap-1.5'
+          : 'flex flex-wrap items-center gap-2'
+      }
+    >
+      <p className="line-clamp-2 min-w-0 max-w-full break-all font-display text-2xl leading-tight text-ink">
         {otherCard?.word ?? '（已刪除的字卡）'}
       </p>
       {otherCard?.partOfSpeech && (
@@ -167,7 +195,7 @@ function RelationTypeTag({ relation }: { relation: RelationWithCard['relation'] 
     RELATION_TYPE_LABEL[relation.relationType] + (relation.relationSource === 'ai' ? ' ‧ AI' : '')
 
   return (
-    <span className="whitespace-nowrap rounded-full bg-paper-deep px-2 py-0.5 text-sm font-semibold text-ink-soft">
+    <span className="whitespace-nowrap rounded-full bg-slate-200 px-2 py-0.5 text-sm font-semibold text-slate-700">
       {typeTagLabel}
     </span>
   )
@@ -177,28 +205,73 @@ interface RelationItemProps {
   relation: RelationWithCard['relation']
   otherCard: Card | undefined
   otherSense: RelationWithCard['otherSense']
+  otherSenses: Sense[]
   onEdit: () => void
   onDelete: () => void
 }
 
-function RelationItem({ relation, otherCard, otherSense, onEdit, onDelete }: RelationItemProps) {
+function RelationItem({
+  relation,
+  otherCard,
+  otherSense,
+  otherSenses,
+  onEdit,
+  onDelete,
+}: RelationItemProps) {
+  const sortedOtherSenses = [...otherSenses].sort(
+    (a, b) => Number(b.isPrimary) - Number(a.isPrimary),
+  )
+
   const content = (
     <>
-      <div className="min-w-0">
-        <RelationWordRow otherCard={otherCard} otherSense={otherSense} />
-        {relation.description && (
-          <p className="mt-1 text-sm text-ink-soft">{relation.description}</p>
-        )}
-        <div className="mt-2 flex items-center">
-          <RelationTypeTag relation={relation} />
+      <div className="flex w-full items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <RelationWordRow otherCard={otherCard} otherSense={undefined} stackPartOfSpeech />
         </div>
+        <CardActionsMenu onEdit={onEdit} onDelete={onDelete} />
       </div>
-      <CardActionsMenu onEdit={onEdit} onDelete={onDelete} />
+
+      <div className="mt-3 w-full flex-1">
+        {/* 對方字卡的全部語意，一語意一列（比照單字列表的語意呈現）；
+            相似意思類型的配對語意加上標註（使用者回饋）。 */}
+        {otherCard &&
+          (otherSenses.length > 0 ? (
+            <ul className="space-y-1.5">
+              {sortedOtherSenses.map((sense) => (
+                <li key={sense.id} className="rounded-xl bg-paper-deep px-3 py-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <p className="min-w-0 truncate text-sm font-semibold text-ink">
+                      {sense.chineseMeaning}
+                    </p>
+                    {sense.isPrimary && (
+                      <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-white">
+                        始
+                      </span>
+                    )}
+                    {sense.id === otherSense?.id && (
+                      <span className="shrink-0 rounded-full bg-slate-500 px-2 py-0.5 text-xs font-semibold text-white">
+                        似
+                      </span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-xs text-ink-soft">尚無詞義紀錄</p>
+          ))}
+        {relation.description && (
+          <p className="mt-2 text-sm text-ink-soft">{relation.description}</p>
+        )}
+      </div>
+
+      <div className="mt-3 flex w-full items-center">
+        <RelationTypeTag relation={relation} />
+      </div>
     </>
   )
 
-  const className =
-    'flex h-full items-center justify-between gap-2 rounded-card bg-surface px-4 py-3 shadow-sm'
+  const className = 'flex h-full flex-col rounded-card bg-surface px-4 py-3 shadow-sm'
 
   if (!otherCard) {
     return (
@@ -230,10 +303,48 @@ interface RelationEditFormProps {
 function RelationEditForm({ relation, otherCard, otherSense, onDone }: RelationEditFormProps) {
   const [description, setDescription] = useState(relation.description)
   const [relationType, setRelationType] = useState<RelationType>(relation.relationType)
+  const [error, setError] = useState<string | null>(null)
+
+  // 切換至相似意思時即時顯示將配對的語意（中文）供確認——原為 Card 層級
+  // 關聯時預設對方主要語意（儲存時同一規則寫入；使用者回饋）。
+  const otherCardSenses = useLiveQuery(
+    () =>
+      otherCard
+        ? db.senses.where('cardId').equals(otherCard.id).toArray()
+        : Promise.resolve([] as Sense[]),
+    [otherCard?.id],
+  )
+  const pairedSensePreview = isSenseLevelRelationType(relationType)
+    ? (otherSense ?? primarySenseOf(otherCardSenses ?? []))
+    : undefined
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    await updateRelation(relation.id, { description: description.trim(), relationType })
+    setError(null)
+
+    let sourceSenseId = relation.sourceSenseId
+    let targetSenseId = relation.targetSenseId
+    if (isSenseLevelRelationType(relationType) && (!sourceSenseId || !targetSenseId)) {
+      // Switching a card-level relation to 相似意思 needs a sense pair —
+      // default to each card's primary sense (PRD 3.2 延伸單字建議).
+      const [sourceSenses, targetSenses] = await Promise.all([
+        db.senses.where('cardId').equals(relation.sourceCardId).toArray(),
+        db.senses.where('cardId').equals(relation.targetCardId).toArray(),
+      ])
+      sourceSenseId = primarySenseOf(sourceSenses)?.id
+      targetSenseId = primarySenseOf(targetSenses)?.id
+      if (!sourceSenseId || !targetSenseId) {
+        setError('雙方字卡皆需至少一個詞義，才能改為相似意思關聯。')
+        return
+      }
+    }
+
+    await updateRelation(relation.id, {
+      description: description.trim(),
+      relationType,
+      sourceSenseId,
+      targetSenseId,
+    })
     onDone()
   }
 
@@ -244,7 +355,12 @@ function RelationEditForm({ relation, otherCard, otherSense, onDone }: RelationE
     >
       <h3 className="font-display text-base font-normal text-ink-soft">編輯關聯</h3>
 
-      <RelationWordRow otherCard={otherCard} otherSense={otherSense} />
+      <RelationWordRow otherCard={otherCard} otherSense={pairedSensePreview} />
+      {pairedSensePreview && !otherSense && (
+        <p className="text-xs text-ink-soft">
+          改為相似意思後，將與上方顯示的主要語意「{pairedSensePreview.chineseMeaning}」配對。
+        </p>
+      )}
 
       <div>
         <span className="mb-1 block text-xs font-medium tracking-wide text-ink-soft">類型</span>
@@ -274,6 +390,7 @@ function RelationEditForm({ relation, otherCard, otherSense, onDone }: RelationE
         value={description}
         onChange={setDescription}
       />
+      {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
       <div className="flex justify-end gap-2 pt-1">
         <button
           type="button"
@@ -309,6 +426,9 @@ function AddRelationForm({ cardId, relationsWithCards, onDone }: AddRelationForm
   const [relationType, setRelationType] = useState<RelationType>('confusable')
   const [description, setDescription] = useState('')
   const [error, setError] = useState<string | null>(null)
+  // 建議清單只在使用者聚焦／輸入搜尋欄時開啟——切換關聯類型雖保留搜尋
+  // 文字，但不自動彈出清單（使用者回饋）。
+  const [isSuggestionListOpen, setIsSuggestionListOpen] = useState(false)
 
   const sensesByCardId = useMemo(() => {
     const map = new Map<string, Sense[]>()
@@ -324,25 +444,39 @@ function AddRelationForm({ cardId, relationsWithCards, onDone }: AddRelationForm
   }, [allSenses])
 
   const trimmedQuery = targetQuery.trim()
+  const isSenseLevel = isSenseLevelRelationType(relationType)
   const suggestions = useMemo(() => {
     if (!trimmedQuery || selectedTarget) return []
     const normalizedQuery = normalizeWord(targetQuery)
     const matchingCards = (allCards ?? []).filter(
       (card) => card.id !== cardId && card.normalizedWord.includes(normalizedQuery),
     )
-    return matchingCards.flatMap((card) =>
-      (sensesByCardId.get(card.id) ?? []).map((sense) => ({ card, sense })),
-    )
-  }, [allCards, sensesByCardId, targetQuery, trimmedQuery, selectedTarget, cardId])
+    if (isSenseLevel) {
+      // 相似意思 pairs specific senses, so offer one suggestion per sense.
+      return matchingCards.flatMap((card) =>
+        (sensesByCardId.get(card.id) ?? []).map((sense) => ({
+          card,
+          sense: sense as Sense | undefined,
+        })),
+      )
+    }
+    // Card-level types (易混淆／詞性變化) pair whole cards — one suggestion
+    // per card, with the primary sense shown as context only.
+    return matchingCards.map((card) => ({
+      card,
+      sense: primarySenseOf(sensesByCardId.get(card.id) ?? []),
+    }))
+  }, [allCards, sensesByCardId, targetQuery, trimmedQuery, selectedTarget, cardId, isSenseLevel])
 
   const selectedSense = selectedTarget
     ? (sensesByCardId.get(selectedTarget.id) ?? []).find((sense) => sense.id === targetSenseId)
     : undefined
 
-  function handleSelectSuggestion(card: Card, sense: Sense) {
+  function handleSelectSuggestion(card: Card, sense: Sense | undefined) {
     setSelectedTarget(card)
     setTargetQuery(card.word)
-    setTargetSenseId(sense.id)
+    setTargetSenseId(isSenseLevelRelationType(relationType) ? sense?.id : undefined)
+    setIsSuggestionListOpen(false)
     setError(null)
   }
 
@@ -357,7 +491,7 @@ function AddRelationForm({ cardId, relationsWithCards, onDone }: AddRelationForm
     event.preventDefault()
     setError(null)
 
-    if (!selectedTarget || !targetSenseId) {
+    if (!selectedTarget) {
       setError('請從搜尋結果中選擇單字。')
       return
     }
@@ -369,17 +503,26 @@ function AddRelationForm({ cardId, relationsWithCards, onDone }: AddRelationForm
       setError('這兩張字卡已經有相同類型的關聯了。')
       return
     }
-    const sourceSense = primarySenseOf(sensesByCardId.get(cardId) ?? [])
-    if (!sourceSense) {
-      setError('目前字卡尚無詞義，無法建立關聯。')
-      return
+
+    let sourceSenseId: string | undefined
+    if (isSenseLevel) {
+      if (!targetSenseId) {
+        setError('請從搜尋結果中選擇單字的詞義。')
+        return
+      }
+      const sourceSense = primarySenseOf(sensesByCardId.get(cardId) ?? [])
+      if (!sourceSense) {
+        setError('目前字卡尚無詞義，無法建立相似意思關聯。')
+        return
+      }
+      sourceSenseId = sourceSense.id
     }
 
     await createRelation({
       sourceCardId: cardId,
       targetCardId: selectedTarget.id,
-      sourceSenseId: sourceSense.id,
-      targetSenseId,
+      sourceSenseId,
+      targetSenseId: isSenseLevel ? targetSenseId : undefined,
       relationType,
       relationSource: 'manual',
       description: description.trim(),
@@ -429,15 +572,17 @@ function AddRelationForm({ cardId, relationsWithCards, onDone }: AddRelationForm
               onChange={(event) => {
                 setTargetQuery(event.target.value)
                 setSelectedTarget(undefined)
+                setIsSuggestionListOpen(true)
                 setError(null)
               }}
-              className="min-h-[44px] w-full rounded-full border border-rule bg-surface py-2.5 pr-4 pl-11 text-lg font-semibold text-ink placeholder:text-base placeholder:font-normal placeholder:text-ink-soft/50 focus:border-accent focus:outline-none"
+              onFocus={() => setIsSuggestionListOpen(true)}
+              className="min-h-[44px] w-full rounded-full border border-rule bg-surface py-2.5 pr-4 pl-11 text-base leading-6 tracking-wide font-semibold text-ink placeholder:font-normal placeholder:text-ink-soft/50 focus:border-accent focus:outline-none"
             />
-            {trimmedQuery.length > 0 && (
+            {isSuggestionListOpen && trimmedQuery.length > 0 && (
               <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-2xl border border-rule bg-surface shadow-lg">
                 {suggestions.length > 0 ? (
                   suggestions.map(({ card, sense }) => (
-                    <li key={sense.id}>
+                    <li key={sense?.id ?? card.id}>
                       <button
                         type="button"
                         onClick={() => handleSelectSuggestion(card, sense)}
@@ -451,9 +596,11 @@ function AddRelationForm({ cardId, relationsWithCards, onDone }: AddRelationForm
                             {card.partOfSpeech}
                           </span>
                         )}
-                        <span className="truncate text-xs text-ink-soft">
-                          {sense.chineseMeaning}
-                        </span>
+                        {sense && (
+                          <span className="truncate text-xs text-ink-soft">
+                            {sense.chineseMeaning}
+                          </span>
+                        )}
                       </button>
                     </li>
                   ))
@@ -473,7 +620,28 @@ function AddRelationForm({ cardId, relationsWithCards, onDone }: AddRelationForm
             <button
               key={option.value}
               type="button"
-              onClick={() => setRelationType(option.value)}
+              onClick={() => {
+                if (option.value === relationType) return
+                setRelationType(option.value)
+                // Switching type keeps the search field exactly as it was —
+                // selected target and typed query both stay, and no
+                // suggestion list pops open (使用者回饋). Only the bound
+                // sense adjusts to the new pairing level: sense-level
+                // defaults to the target's primary sense (same as the edit
+                // form's type switch), card-level unbinds the sense.
+                setIsSuggestionListOpen(false)
+                setError(null)
+                if (selectedTarget) {
+                  if (isSenseLevelRelationType(option.value)) {
+                    setTargetSenseId(
+                      (current) =>
+                        current ?? primarySenseOf(sensesByCardId.get(selectedTarget.id) ?? [])?.id,
+                    )
+                  } else {
+                    setTargetSenseId(undefined)
+                  }
+                }
+              }}
               aria-pressed={relationType === option.value}
               className={`flex h-11 items-center rounded-full px-4 text-sm font-semibold transition-colors ${
                 relationType === option.value

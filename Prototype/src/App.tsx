@@ -8,9 +8,9 @@ import DevSeedPanel from './components/DevSeedPanel'
 
 function App() {
   return (
-    <div className="flex min-h-svh flex-col">
+    <div className="flex h-svh flex-col overflow-hidden">
       {import.meta.env.DEV && <DevSeedPanel />}
-      <main className="flex-1 pb-[calc(72px+env(safe-area-inset-bottom))]">
+      <main className="h-[var(--lexicard-main-height)] min-h-0 flex-none overflow-x-hidden overflow-y-auto">
         <Routes>
           <Route path="/" element={<CardLibraryPage />} />
           <Route path="/cards/:id" element={<CardDetailPage />} />

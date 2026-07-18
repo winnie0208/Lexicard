@@ -20,8 +20,13 @@ export function useSnapAlign(
     if (!container) return
 
     let settleTimer: ReturnType<typeof setTimeout>
+    // JS 校正是為觸控瀏覽器的原生捲動準備；桌機滑鼠拖曳已有
+    // useDragToScroll 決定方向與停點，若這裡再找「最近卡片」會把結果拉回。
+    // 以最近一次實際輸入來源分流，比單看裝置媒體查詢更能支援觸控筆電。
+    let shouldAlign = window.matchMedia('(pointer: coarse)').matches
 
     function alignToNearestCard() {
+      if (!shouldAlign) return
       const el = containerRef.current
       if (!el) return
       const cards = Array.from(el.children) as HTMLElement[]
@@ -45,6 +50,11 @@ export function useSnapAlign(
         }
       }
 
+      // Skip the correction once the last card is the nearest one — forcing
+      // its start edge flush to the left padding here would yank the view
+      // away from wherever the user chose to stop near the end of the list.
+      if (closest === cards[cards.length - 1]) return
+
       const target = Math.min(Math.max(0, closest.offsetLeft - paddingPx), maxScrollLeft)
       if (Math.abs(target - el.scrollLeft) > 1) {
         el.scrollTo({ left: target, behavior: 'smooth' })
@@ -56,8 +66,22 @@ export function useSnapAlign(
       settleTimer = setTimeout(alignToNearestCard, 120)
     }
 
+    function handlePointerDown(event: PointerEvent) {
+      shouldAlign = event.pointerType === 'touch' || event.pointerType === 'pen'
+      if (!shouldAlign) clearTimeout(settleTimer)
+    }
+
+    function handleWheel() {
+      shouldAlign = false
+      clearTimeout(settleTimer)
+    }
+
+    container.addEventListener('pointerdown', handlePointerDown, { passive: true })
+    container.addEventListener('wheel', handleWheel, { passive: true })
     container.addEventListener('scroll', handleScroll, { passive: true })
     return () => {
+      container.removeEventListener('pointerdown', handlePointerDown)
+      container.removeEventListener('wheel', handleWheel)
       container.removeEventListener('scroll', handleScroll)
       clearTimeout(settleTimer)
     }

@@ -25,12 +25,14 @@ export function useCardDetail(cardId: string | undefined) {
     const otherIds = relations.map((relation) =>
       relation.sourceCardId === cardId ? relation.targetCardId : relation.sourceCardId,
     )
+    // Card-level relation types (confusable, partOfSpeechVariant) have no
+    // senseIds, so fetch senses individually and leave those slots undefined.
     const otherSenseIds = relations.map((relation) =>
       relation.sourceCardId === cardId ? relation.targetSenseId : relation.sourceSenseId,
     )
     const [otherCards, otherSenses] = await Promise.all([
       db.cards.bulkGet(otherIds),
-      db.senses.bulkGet(otherSenseIds),
+      Promise.all(otherSenseIds.map((senseId) => (senseId ? db.senses.get(senseId) : undefined))),
     ])
     return relations.map((relation, index) => ({
       relation,

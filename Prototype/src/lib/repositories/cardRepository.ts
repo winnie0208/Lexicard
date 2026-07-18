@@ -44,6 +44,10 @@ export function findCardByNormalizedWord(word: string): Promise<Card | undefined
   return db.cards.where('normalizedWord').equals(normalizeWord(word)).first()
 }
 
+export function findCardsByNormalizedWord(word: string): Promise<Card[]> {
+  return db.cards.where('normalizedWord').equals(normalizeWord(word)).toArray()
+}
+
 export async function updateCard(id: string, changes: UpdateCardInput): Promise<Card | undefined> {
   await db.cards.update(id, { ...changes, updatedAt: Date.now() })
   return db.cards.get(id)
